@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wikipedia Article Search</title>
+</head>
+<body>
+    <h1>Wikipedia記事検索</h1>
+    <input type="text" id="searchInput" placeholder="検索キーワードを入力">
+    <input type="text" id="categoryInput" placeholder="カテゴリ名を入力">
+    <button onclick="searchWikipedia()">検索</button>
+    <div id="searchResults"></div>
+
+    <script>
+        function searchWikipedia() {
+            const searchInput = document.getElementById('searchInput').value;
+            const categoryInput = document.getElementById('categoryInput').value;
+            const searchResults = document.getElementById('searchResults');
+            const keywords = searchInput.split(',').map(keyword => keyword.trim());
+            const category = categoryInput.trim();
+
+            // Wikipedia APIを呼び出すURLを生成
+            let apiUrl = `https://ja.wikipedia.org/w/api.php?action=query&list=search&srsearch=${keywords.join('|')}+incategory:"${category}"&format=json&origin=*&srnamespace=0`;
+
+            // Wikipedia APIにGETリクエストを送信
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const results = data.query.search;
+                    searchResults.innerHTML = ''; // 検索結果をクリア
+
+                    // バッチ数の高い記事だけを表示
+                    for (const result of results) {
+                        if (result.wordcount > 3600) { // この数値は調整が必要かもしれません
+                            const articleLink = `https://ja.wikipedia.org/wiki/${result.title}`;
+                            const articleTitle = result.title;
+                            const articleSnippet = result.snippet;
+
+                            // 結果を表示
+                            const articleElement = document.createElement('div');
+                            articleElement.innerHTML = `<a href="${articleLink}" target="_blank">${articleTitle}</a><p>${articleSnippet}</p>`;
+                            searchResults.appendChild(articleElement);
+                        }
+                    }
+                })
+                .catch(error => {
+                    searchResults.innerHTML = '検索中にエラーが発生しました。';
+                    console.error(error);
+                });
+        }
+    </script>
+</body>
+</html>
